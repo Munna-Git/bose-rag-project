@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bose Professional Technical Assistant</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-section">
+                <div class="logo-placeholder">BOSE</div>
+                <h1>Professional Technical Assistant</h1>
+            </div>
+            <div class="status-indicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- System Info Card -->
+            <div class="info-card" id="infoCard">
+                <div class="info-item">
+                    <span class="info-label">Model:</span>
+                    <span class="info-value" id="modelInfo">Loading...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Documents:</span>
+                    <span class="info-value" id="docCount">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Status:</span>
+                    <span class="info-value" id="systemStatus">Initializing</span>
+                </div>
+            </div>
+
+            <!-- Chat Interface -->
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h2>Ask about Bose Professional products</h2>
+                    <p>Get instant answers about specifications, installation, and configuration</p>
+                </div>
+
+                <!-- Messages Area -->
+                <div class="messages-area" id="messagesArea">
+                    <div class="welcome-message">
+                        <h3>Welcome to Bose Professional Support</h3>
+                        <p>I'm your AI technical assistant. Ask me about:</p>
+                        <ul>
+                            <li>Product specifications and features</li>
+                            <li>Installation and wiring diagrams</li>
+                            <li>Configuration and setup procedures</li>
+                            <li>Technical troubleshooting</li>
+                        </ul>
+                        <p class="example-text">Example: "What is the maximum number of analog inputs on the EX-1280C?"</p>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="input-area">
+                    <form id="queryForm">
+                        <div class="input-wrapper">
+                            <textarea 
+                                id="queryInput" 
+                                placeholder="Type your technical question here..."
+                                rows="1"
+                                autocomplete="off"
+                                autofocus
+                            ></textarea>
+                            <button type="submit" id="submitBtn" class="submit-btn">
+                                <span id="submitText">Send</span>
+                                <svg id="submitIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="input-hint">Press Enter to send, Shift+Enter for new line</div>
+                    </form>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2024 Bose Professional. Powered by AI | Privacy: 100% Local</p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

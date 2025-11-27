@@ -33,67 +33,70 @@ This creates a temporary public URL (valid for 72 hours) that you can share with
 
 ---
 
-## Option 2: Production Deployment
+## Option 2: Production Deployment (FastAPI with Professional UI)
 
-### Using Uvicorn + FastAPI
+### Quick Start
 
-Create `app.py` in the project root:
+The project includes a production-ready FastAPI application with a professional Bose-style web interface.
 
-```python
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from src.interfaces.rag_phi import BoseRAGPhi
-from typing import List, Optional
-import uvicorn
-
-app = FastAPI(title="Bose RAG API", version="1.0.0")
-
-# Initialize RAG system
-rag = None
-
-@app.on_event("startup")
-async def startup_event():
-    global rag
-    rag = BoseRAGPhi()
-
-class QueryRequest(BaseModel):
-    question: str
-    verbose: bool = False
-
-class QueryResponse(BaseModel):
-    status: str
-    query: str
-    answer: str
-    sources: List[dict]
-    time: str
-
-@app.post("/query", response_model=QueryResponse)
-async def query_endpoint(request: QueryRequest):
-    if not rag.retriever:
-        raise HTTPException(status_code=400, detail="No documents loaded")
-    
-    result = rag.answer_query(request.question, verbose=request.verbose)
-    return result
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "model": "phi-2"}
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-```
-
-Install FastAPI:
 ```powershell
+# Install FastAPI dependencies
 pip install fastapi uvicorn
+
+# Launch using the convenience script
+.\launch_fastapi.ps1
 ```
 
-Run:
+Or manually:
 ```powershell
 python app.py
 ```
 
-Access API docs at: **http://localhost:8000/docs**
+**Access the application:**
+- **Web Interface:** http://localhost:8000
+- **API Documentation:** http://localhost:8000/docs
+- **Health Check:** http://localhost:8000/api/health
+
+### Features
+
+✅ **Professional Bose-branded UI** with dark theme and brand colors  
+✅ **Real-time status monitoring** (system health, document count)  
+✅ **Chat interface** for technical questions  
+✅ **Source citations** with page numbers and content types  
+✅ **REST API** with OpenAPI documentation  
+✅ **Responsive design** for desktop and mobile  
+
+### API Endpoints
+
+**POST /api/query** - Submit a technical question
+```json
+{
+  "question": "What is the maximum number of analog inputs?",
+  "verbose": false
+}
+```
+
+**GET /api/health** - Check system health
+```json
+{
+  "status": "healthy",
+  "model": "phi-2",
+  "documents_loaded": true,
+  "document_count": 156
+}
+```
+
+**GET /api/info** - Get detailed system information
+
+### Customization
+
+Edit `static/styles.css` to customize the UI theme:
+```css
+:root {
+    --bose-accent: #00a0dc;  /* Primary brand color */
+    --bose-dark: #1a1a1a;     /* Background color */
+}
+```
 
 ---
 
@@ -341,10 +344,15 @@ server_port=7861
 ## Quick Commands Reference
 
 ```powershell
-# Start application
+# Start FastAPI application (Professional UI)
+.\launch_fastapi.ps1
+# or
+python app.py
+
+# Start Gradio application (Alternative)
 python src\interfaces\gradio_app.py
 
-# Start with public URL
+# Start with public URL (Gradio only)
 python src\interfaces\gradio_app.py --share
 
 # Check database
