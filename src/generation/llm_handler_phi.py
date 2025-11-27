@@ -29,8 +29,7 @@ class Phi2Handler:
         self.model_name = config.OLLAMA_MODEL
         self.base_url = config.OLLAMA_BASE_URL
         self.temperature = config.OLLAMA_TEMPERATURE
-        # Cap tokens to improve latency and focus answers
-        self.max_tokens = min(config.MAX_TOKENS, 256)
+        self.max_tokens = config.MAX_TOKENS
         self.timeout = config.RESPONSE_TIMEOUT
         self.model = None
         self.retry_count = 0

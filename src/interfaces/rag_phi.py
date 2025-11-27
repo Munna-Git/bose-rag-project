@@ -211,25 +211,12 @@ class BoseRAGPhi:
             
             # Build sources with distance for confidence
             sources = []
-            distances = []
             for doc in docs:
-                dist = doc.metadata.get('distance')
-                if isinstance(dist, (int, float)):
-                    distances.append(float(dist))
                 sources.append({
                     'page': doc.metadata.get('page'),
                     'content_type': doc.metadata.get('content_type'),
-                    'source': doc.metadata.get('source'),
-                    'distance': dist
+                    'source': doc.metadata.get('source')
                 })
-
-            # Simple confidence heuristic based on top distance
-            confidence = 'unknown'
-            if distances:
-                d0 = distances[0]
-                if d0 is not None:
-                    # Lower distance => higher similarity in Chroma
-                    confidence = 'high' if d0 <= 0.15 else 'medium' if d0 <= 0.35 else 'low'
             
             logger.info(f"SUCCESS: Query answered in {elapsed_time:.2f}s")
             
@@ -238,7 +225,6 @@ class BoseRAGPhi:
                 'query': query,
                 'answer': answer,
                 'sources': sources,
-                'confidence': confidence,
                 'model': 'phi-2',
                 'time': f"{elapsed_time:.2f}s"
             }
@@ -270,19 +256,19 @@ class BoseRAGPhi:
             return
         
         print("\n" + "=" * 70)
-        print("🎙️  BOSE TECHNICAL SPECS Q&A (Phi-2)")
+        print("BOSE TECHNICAL SPECS Q&A (Phi-2)")
         print("=" * 70)
-        print(f"Model: Phi-2 | Privacy: 100% Local | Speed: Fast ⚡")
+        print(f"Model: Phi-2 | Privacy: 100% Local | Speed: Fast")
         print("Type 'quit', 'exit', or 'q' to exit\n")
         
         query_count = 0
         
         while True:
             try:
-                query = input("❓ Your question: ").strip()
+                query = input("Your question: ").strip()
                 
                 if query.lower() in ['quit', 'exit', 'q']:
-                    print("\n👋 Goodbye!")
+                    print("\nGoodbye!")
                     break
                 
                 if not query:
@@ -296,24 +282,24 @@ class BoseRAGPhi:
                 result = self.answer_query(query, verbose=False)
                 
                 # Display result
-                print(f"\n{'✅' if result['status'] == 'success' else '⚠️'} Answer:")
+                print(f"\nAnswer:")
                 print(f"{result['answer']}\n")
                 
                 if result['sources']:
-                    print(f"📚 Sources ({len(result['sources'])} documents):")
+                    print(f"Sources ({len(result['sources'])} documents):")
                     for i, src in enumerate(result['sources'], 1):
                         print(f"   {i}. Page {src['page']} ({src['content_type']}) - {src['source']}")
                 
-                print(f"⏱️  Time: {result['time']}")
+                print(f"Time: {result['time']}")
                 print("-" * 70 + "\n")
             
             except KeyboardInterrupt:
-                print("\n\n👋 Interrupted. Goodbye!")
+                print("\n\nInterrupted. Goodbye!")
                 break
             
             except Exception as e:
                 logger.error(f"Unexpected error in interactive session: {str(e)}")
-                print(f"❌ Error: {str(e)}")
+                print(f"Error: {str(e)}")
                 print("Continuing...\n")
     
     def get_system_info(self) -> Dict:

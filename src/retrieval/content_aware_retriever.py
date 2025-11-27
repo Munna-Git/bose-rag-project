@@ -24,35 +24,18 @@ class ContentAwareRetriever:
             # Search
             results = self.vector_store.search(query, k=k)
 
-            # Prepare lists
+            # Convert to Document objects (no reranking; preserve vector order)
             documents: List[Document] = []
             if results.get('documents') and len(results['documents']) > 0:
                 docs_list = results['documents'][0]
                 metas_list = results.get('metadatas', [[]])[0] if results.get('metadatas') else [{}] * len(docs_list)
-                dists_list = results.get('distances', [[]])[0] if results.get('distances') else [1.0] * len(docs_list)
 
-                # Keyword overlap for reranking
-                q_low = query.lower()
-                keywords = self._keywords_for_rerank(q_low, intent)
-
-                scored = []
-                for doc_text, metadata, dist in zip(docs_list, metas_list, dists_list):
-                    text_low = (doc_text or '').lower()
-                    meta_low = ' '.join(str(v).lower() for v in (metadata or {}).values())
-                    overlap = sum(1 for kw in keywords if kw in text_low or kw in meta_low)
-                    score = (overlap * 2.0) - float(dist if dist is not None else 1.0)
-                    scored.append((score, doc_text, metadata or {}, float(dist if dist is not None else 1.0), overlap))
-
-                # Sort by score desc and trim to k
-                scored.sort(key=lambda x: x[0], reverse=True)
-                scored = scored[:k]
-
-                for _, doc_text, metadata, dist, overlap in scored:
-                    # Attach distance and overlap for downstream confidence and display
-                    metadata = dict(metadata)
-                    metadata['distance'] = dist
-                    metadata['overlap'] = overlap
-                    documents.append(Document(page_content=doc_text, metadata=metadata))
+                for doc_text, metadata in zip(docs_list, metas_list):
+                    doc = Document(
+                        page_content=doc_text,
+                        metadata=metadata or {}
+                    )
+                    documents.append(doc)
 
             logger.info(f"Retrieved {len(documents)} documents for query")
             if len(documents) == 0:
@@ -78,13 +61,4 @@ class ContentAwareRetriever:
         else:
             return "general"
 
-    def _keywords_for_rerank(self, q_low: str, intent: str) -> List[str]:
-        base = []
-        for token in ['ex-1280c', 'ex1280c', 'analog', 'inputs', 'input channels', 'mic/line', 'euroblock', 'dante', 'usb', 'voip', 'aec']:
-            if token in q_low:
-                base.append(token)
-        if intent == 'spec':
-            base += ['max', 'maximum', 'count', 'qty', 'number', 'analog inputs', 'mic inputs', 'line inputs']
-        elif intent == 'procedure':
-            base += ['configure', 'setup', 'install', 'connect']
-        return list(set(base))
+    
