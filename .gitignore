@@ -1,1 +1,25 @@
-venv/ 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project
+data/documents/
+data/vector_db/
+*.log
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
