@@ -729,7 +729,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for cloud deployment (AWS, Azure, GCP).
 - **Why content-aware prompts?** Different content needs different framing
 - **Why persistent storage?** Avoid reprocessing, faster startup
 
-### Potential Improvements (Interview Talking Points)
+### Potential Improvements
 
 1. **Caching:** Redis for frequent queries
 2. **GPU Acceleration:** 10x faster with CUDA
