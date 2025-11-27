@@ -24,28 +24,36 @@ class BoseRAGPhi:
         """Initialize RAG system"""
         
         logger.info("=" * 70)
-        logger.info("🚀 Initializing Bose RAG with Phi-2...")
+        logger.info("Initializing Bose RAG with Phi-2...")
         logger.info("=" * 70)
         
         try:
             # Initialize components
             self.vector_store = EnhancedChromaDB()
-            logger.info("✅ Vector store initialized")
+            logger.info("SUCCESS: Vector store initialized")
             
             self.prompt_builder = PromptBuilder()
-            logger.info("✅ Prompt builder initialized")
+            logger.info("SUCCESS: Prompt builder initialized")
             
             self.llm = Phi2Handler()
-            logger.info("✅ Phi-2 LLM initialized")
+            logger.info("SUCCESS: Phi-2 LLM initialized")
             
-            self.retriever = None
             self.router = ProcessingRouter()
             
-            logger.info("✅ RAG system fully initialized")
+            # Check if database has documents and initialize retriever
+            doc_count = self.vector_store.collection.count()
+            if doc_count > 0:
+                self.retriever = ContentAwareRetriever(self.vector_store)
+                logger.info(f"SUCCESS: Loaded existing collection with {doc_count} documents")
+            else:
+                self.retriever = None
+                logger.warning("WARNING: No documents in database. Process documents first.")
+            
+            logger.info("SUCCESS: RAG system fully initialized")
             logger.info("=" * 70)
         
         except Exception as e:
-            logger.error(f"❌ Initialization failed: {str(e)}")
+            logger.error(f"ERROR: Initialization failed: {str(e)}")
             error_handler.handle_error(
                 ErrorType.PROCESSING_ERROR,
                 e,
@@ -64,7 +72,7 @@ class BoseRAGPhi:
             Processing result dictionary
         """
         
-        logger.info(f"📥 Processing {len(pdf_paths)} document(s)...")
+        logger.info(f"Processing {len(pdf_paths)} document(s)...")
         
         all_chunks = []
         processed_count = 0
@@ -78,10 +86,10 @@ class BoseRAGPhi:
                 all_chunks.extend(chunks)
                 processed_count += 1
                 
-                logger.info(f"✅ {pdf_path}: {len(chunks)} chunks extracted")
+                logger.info(f"SUCCESS: {pdf_path}: {len(chunks)} chunks extracted")
             
             except Exception as e:
-                logger.error(f"❌ Failed to process {pdf_path}: {str(e)}")
+                logger.error(f"ERROR: Failed to process {pdf_path}: {str(e)}")
                 failed_count += 1
                 
                 error_handler.handle_error(
@@ -91,7 +99,7 @@ class BoseRAGPhi:
                 )
         
         if not all_chunks:
-            logger.warning("⚠️ No chunks extracted from any document")
+            logger.warning("WARNING: No chunks extracted from any document")
             return {
                 'status': 'failed',
                 'total_chunks': 0,
@@ -102,13 +110,13 @@ class BoseRAGPhi:
         
         try:
             # Store in vector DB
-            logger.info(f"💾 Storing {len(all_chunks)} chunks...")
+            logger.info(f"Storing {len(all_chunks)} chunks...")
             self.vector_store.add_documents(all_chunks)
             
             # Initialize retriever
             self.retriever = ContentAwareRetriever(self.vector_store)
             
-            logger.info(f"✅ Processing complete: {len(all_chunks)} chunks stored")
+            logger.info(f"SUCCESS: Processing complete: {len(all_chunks)} chunks stored")
             
             return {
                 'status': 'success',
@@ -118,7 +126,7 @@ class BoseRAGPhi:
             }
         
         except Exception as e:
-            logger.error(f"❌ Storage failed: {str(e)}")
+            logger.error(f"ERROR: Storage failed: {str(e)}")
             error_handler.handle_error(
                 ErrorType.PROCESSING_ERROR,
                 e,
@@ -152,7 +160,7 @@ class BoseRAGPhi:
             
             # Check initialization
             if not self.retriever:
-                logger.warning("⚠️ No documents processed yet")
+                logger.warning("WARNING: No documents processed yet")
                 return {
                     'status': 'error',
                     'query': query,
@@ -163,13 +171,13 @@ class BoseRAGPhi:
                 }
             
             if verbose:
-                logger.info(f"🔍 Step 1: Retrieving documents...")
+                logger.info(f"Step 1: Retrieving documents...")
             
             # Retrieve documents
             docs = self.retriever.retrieve(query, k=5)
             
             if not docs:
-                logger.warning(f"⚠️ No relevant documents found for query: {query}")
+                logger.warning(f"WARNING: No relevant documents found for query: {query}")
                 return {
                     'status': 'no_context',
                     'query': query,
@@ -183,45 +191,60 @@ class BoseRAGPhi:
                 }
             
             if verbose:
-                logger.info(f"✅ Retrieved {len(docs)} relevant documents")
-                logger.info(f"📝 Step 2: Building prompt...")
+                logger.info(f"SUCCESS: Retrieved {len(docs)} relevant documents")
+                logger.info(f"Step 2: Building prompt...")
             
             # Build prompt
             prompt = self.prompt_builder.build_prompt(query, docs)
             
             if verbose:
-                logger.info(f"🧠 Step 3: Generating answer with Phi-2...")
+                logger.info(f"Step 3: Generating answer with Phi-2...")
             
             # Generate answer
             answer = self.llm.generate(prompt)
             
             if verbose:
-                logger.info(f"✅ Answer generated")
+                logger.info(f"SUCCESS: Answer generated")
             
             # Format response
             elapsed_time = time.time() - start_time
             
+            # Build sources with distance for confidence
             sources = []
+            distances = []
             for doc in docs:
+                dist = doc.metadata.get('distance')
+                if isinstance(dist, (int, float)):
+                    distances.append(float(dist))
                 sources.append({
                     'page': doc.metadata.get('page'),
                     'content_type': doc.metadata.get('content_type'),
-                    'source': doc.metadata.get('source')
+                    'source': doc.metadata.get('source'),
+                    'distance': dist
                 })
+
+            # Simple confidence heuristic based on top distance
+            confidence = 'unknown'
+            if distances:
+                d0 = distances[0]
+                if d0 is not None:
+                    # Lower distance => higher similarity in Chroma
+                    confidence = 'high' if d0 <= 0.15 else 'medium' if d0 <= 0.35 else 'low'
             
-            logger.info(f"✅ Query answered in {elapsed_time:.2f}s")
+            logger.info(f"SUCCESS: Query answered in {elapsed_time:.2f}s")
             
             return {
                 'status': 'success',
                 'query': query,
                 'answer': answer,
                 'sources': sources,
+                'confidence': confidence,
                 'model': 'phi-2',
                 'time': f"{elapsed_time:.2f}s"
             }
         
         except Exception as e:
-            logger.error(f"❌ Query processing failed: {str(e)}")
+            logger.error(f"ERROR: Query processing failed: {str(e)}")
             
             error_handler.handle_error(
                 ErrorType.RETRIEVAL_ERROR,
@@ -242,8 +265,8 @@ class BoseRAGPhi:
         """Interactive Q&A session with error handling"""
         
         if not self.retriever:
-            logger.error("❌ No documents loaded. Run process_documents() first.")
-            print("❌ Please load documents first!")
+            logger.error("ERROR: No documents loaded. Run process_documents() first.")
+            print("ERROR: Please load documents first!")
             return
         
         print("\n" + "=" * 70)
@@ -296,9 +319,12 @@ class BoseRAGPhi:
     def get_system_info(self) -> Dict:
         """Get system information and health status"""
         
+        doc_count = self.vector_store.collection.count()
+        
         info = {
             'model': self.llm.get_model_info(),
             'documents_loaded': self.retriever is not None,
+            'document_count': doc_count,
             'errors': error_handler.get_error_summary()
         }
         

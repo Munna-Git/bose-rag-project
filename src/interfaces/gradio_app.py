@@ -21,7 +21,7 @@ class RAGGradioApp:
             self.rag = BoseRAGPhi()
             self.formatter = ResponseFormatter()
             self.interface = None
-            logger.info("✅ Gradio app initialized")
+            logger.info("SUCCESS: Gradio app initialized")
         
         except Exception as e:
             logger.error(f"Gradio app initialization failed: {str(e)}")
@@ -40,7 +40,7 @@ class RAGGradioApp:
         
         try:
             if not files:
-                return "❌ No files uploaded"
+                return "ERROR: No files uploaded"
             
             # Extract file paths
             file_paths = []
@@ -51,7 +51,7 @@ class RAGGradioApp:
                     logger.warning(f"Failed to process file: {str(e)}")
             
             if not file_paths:
-                return "❌ No valid files to process"
+                return "ERROR: No valid files to process"
             
             logger.info(f"Processing {len(file_paths)} files via Gradio")
             
@@ -99,7 +99,7 @@ class RAGGradioApp:
         
         try:
             if not question or not question.strip():
-                return "❌ Please enter a question", ""
+                return "ERROR: Please enter a question", ""
             
             logger.info(f"Processing question via Gradio: {question}")
             
@@ -108,7 +108,7 @@ class RAGGradioApp:
             
             # Check status
             if result['status'] == 'error':
-                return f"❌ Error: {result['answer']}", ""
+                return f"ERROR: {result['answer']}", ""
             
             # Format answer
             answer_text = result['answer']
@@ -122,7 +122,7 @@ class RAGGradioApp:
         
         except Exception as e:
             logger.error(f"Question answering failed: {str(e)}")
-            return f"❌ Error: {str(e)}", ""
+            return f"ERROR: {str(e)}", ""
     
     def _format_sources_for_display(self, sources: list) -> str:
         """Format sources for Gradio display"""
@@ -151,15 +151,16 @@ class RAGGradioApp:
         try:
             info = self.rag.get_system_info()
             
-            status = "## 📊 System Status\n\n"
+            status = "## System Status\n\n"
             status += f"**Model:** {info['model'].get('name', 'Unknown')}\n\n"
-            status += f"**Documents Loaded:** {'✅ Yes' if info['documents_loaded'] else '❌ No'}\n\n"
+            status += f"**Documents in Database:** {info.get('document_count', 0)}\n\n"
+            status += f"**Ready for Queries:** {'Yes' if info['documents_loaded'] else 'No - Process documents first'}\n\n"
             
             errors = info['errors']
             if errors['total_errors'] > 0:
-                status += f"**⚠️ Errors:** {errors['total_errors']}\n"
+                status += f"**Errors:** {errors['total_errors']}\n"
             else:
-                status += "**✅ No errors**\n"
+                status += "**No errors**\n"
             
             return status
         
@@ -183,11 +184,17 @@ class RAGGradioApp:
                 theme=gr.themes.Soft()
             ) as demo:
                 
-                # Header
-                gr.Markdown("""
-                # 🎙️ Bose Technical Specs Q&A
+                # Header with status
+                doc_count = self.rag.vector_store.collection.count()
+                status_emoji = "✓" if doc_count > 0 else "⚠"
+                status_text = f"{doc_count} documents loaded" if doc_count > 0 else "No documents - Upload PDFs below"
+                
+                gr.Markdown(f"""
+                # Bose Technical Specs Q&A
                 
                 **Powered by Phi-2 | 100% Local | Privacy First**
+                
+                **Status:** {status_emoji} {status_text}
                 
                 Ask questions about Bose technical documentation.
                 """)
@@ -290,7 +297,7 @@ class RAGGradioApp:
         
         except Exception as e:
             logger.error(f"Gradio launch failed: {str(e)}")
-            print(f"❌ Error launching interface: {str(e)}")
+            print(f"ERROR: Error launching interface: {str(e)}")
             raise
 
 
@@ -314,7 +321,7 @@ def main():
     
     except Exception as e:
         logger.error(f"Application failed: {str(e)}")
-        print(f"❌ Application failed: {str(e)}")
+        print(f"ERROR: Application failed: {str(e)}")
         return 1
     
     return 0

@@ -34,26 +34,26 @@ def main():
         existing_files = [f for f in pdf_files if f.exists()]
         
         if not existing_files:
-            logger.error(f"❌ No PDF files found in {config.DOCS_DIR}")
-            logger.info(f"📌 Place PDFs in: {config.DOCS_DIR}")
+            logger.error(f"ERROR: No PDF files found in {config.DOCS_DIR}")
+            logger.info(f"NOTE: Place PDFs in: {config.DOCS_DIR}")
             return
         
         logger.info(f"Found {len(existing_files)} PDF files")
         
         # Process documents
-        logger.info("\n📥 Processing documents...")
+        logger.info("\nProcessing documents...")
         result = rag.process_documents([str(f) for f in existing_files])
         logger.info(f"Processing result: {result}")
         
         if result['status'] in ['success', 'partial_failure']:
             # Test queries
             test_queries = [
-                "What is the SNR of DesignMax DM8SE?",
-                "How do I configure ControlSpace?",
-                "What is the frequency response?"
+                "What is the maximum number of analog inputs on the EX-1280C?",
+                "What is the maximum power consumption of the processor?",
+                "What is the length of the AEC tail in milliseconds?"
             ]
             
-            logger.info("\n❓ Testing queries...")
+            logger.info("\nTesting queries...")
             
             for query in test_queries:
                 print(f"\n{'=' * 70}")
@@ -71,17 +71,17 @@ def main():
                 print(f"⏱️  {result['time']}")
             
             # Interactive session
-            logger.info("\n🎙️ Starting interactive session...")
+            logger.info("\nStarting interactive session...")
             rag.interactive_session()
         
         else:
-            logger.error(f"❌ Processing failed: {result}")
+            logger.error(f"ERROR: Processing failed: {result}")
     
     except KeyboardInterrupt:
         logger.info("Demo interrupted by user")
     
     except Exception as e:
-        logger.error(f"❌ Demo failed: {str(e)}", exc_info=True)
+        logger.error(f"ERROR: Demo failed: {str(e)}", exc_info=True)
         return 1
     
     return 0

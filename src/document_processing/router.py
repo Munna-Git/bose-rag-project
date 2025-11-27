@@ -2,7 +2,7 @@
 Route documents to appropriate processors
 """
 from typing import List
-from langchain.schema import Document
+from langchain_core.documents import Document
 from src.content_detection.detector import ContentDetector
 from .text_processor import TextProcessor
 from .table_processor import TableProcessor

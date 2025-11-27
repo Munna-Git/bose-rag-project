@@ -2,7 +2,7 @@
 Format and structure LLM responses for better presentation
 """
 from typing import Dict, List
-from langchain.schema import Document
+from langchain_core.documents import Document
 from src.error_handling.logger import logger
 
 

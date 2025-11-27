@@ -5,7 +5,7 @@ Optimized for speed and memory efficiency
 import requests
 import time
 from typing import Optional
-from langchain.llms import Ollama
+from langchain_community.llms import Ollama
 from config.settings import config
 from config.constants import ErrorType
 from src.error_handling.handlers import error_handler
@@ -29,7 +29,8 @@ class Phi2Handler:
         self.model_name = config.OLLAMA_MODEL
         self.base_url = config.OLLAMA_BASE_URL
         self.temperature = config.OLLAMA_TEMPERATURE
-        self.max_tokens = config.MAX_TOKENS
+        # Cap tokens to improve latency and focus answers
+        self.max_tokens = min(config.MAX_TOKENS, 256)
         self.timeout = config.RESPONSE_TIMEOUT
         self.model = None
         self.retry_count = 0
@@ -51,7 +52,7 @@ class Phi2Handler:
                     fallback_fn=lambda: self._suggest_start_ollama()
                 )
                 raise RuntimeError(
-                    "❌ Ollama not running!\n"
+                    "ERROR: Ollama not running!\n"
                     "Start it with: ollama serve"
                 )
             
@@ -64,7 +65,7 @@ class Phi2Handler:
                     fallback_fn=lambda: self._suggest_pull_model()
                 )
                 raise RuntimeError(
-                    f"❌ Model '{self.model_name}' not found!\n"
+                    f"ERROR: Model '{self.model_name}' not found!\n"
                     f"Pull it with: ollama pull {self.model_name}"
                 )
             
@@ -73,12 +74,10 @@ class Phi2Handler:
                 base_url=self.base_url,
                 model=self.model_name,
                 temperature=self.temperature,
-                num_ctx=2048,
-                num_threads=config.OLLAMA_NUM_THREADS,
-                num_gpu=config.OLLAMA_NUM_GPU
+                num_ctx=2048
             )
             
-            logger.info(f"✅ {self.model_name} initialized successfully")
+            logger.info(f"SUCCESS: {self.model_name} initialized successfully")
         
         except Exception as e:
             logger.error(f"Failed to initialize {self.model_name}: {str(e)}")
@@ -104,11 +103,17 @@ class Phi2Handler:
                 timeout=5
             )
             data = response.json()
-            models = [m['name'].split(':') for m in data.get('models', [])]
-            exists = self.model_name in models
+            model_names = [m['name'] for m in data.get('models', [])]
+            
+            # Check if model exists with or without :latest tag
+            exists = (
+                self.model_name in model_names or 
+                f"{self.model_name}:latest" in model_names or
+                any(name.startswith(f"{self.model_name}:") for name in model_names)
+            )
             
             if not exists:
-                logger.warning(f"Model {self.model_name} not found. Available: {models}")
+                logger.warning(f"Model {self.model_name} not found. Available: {model_names}")
             
             return exists
         except Exception as e:
@@ -117,12 +122,12 @@ class Phi2Handler:
     
     def _suggest_start_ollama(self):
         """Suggest how to start Ollama"""
-        logger.info("💡 To start Ollama, run: ollama serve")
+        logger.info("TIP: To start Ollama, run: ollama serve")
         return False
     
     def _suggest_pull_model(self):
         """Suggest how to pull model"""
-        logger.info(f"💡 To pull {self.model_name}, run: ollama pull {self.model_name}")
+        logger.info(f"TIP: To pull {self.model_name}, run: ollama pull {self.model_name}")
         return False
     
     def generate(self, prompt: str, retries: int = 0) -> str:

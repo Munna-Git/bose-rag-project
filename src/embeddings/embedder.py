@@ -1,7 +1,7 @@
 """
 Embedding generation
 """
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from config.settings import config
 from src.error_handling.logger import logger
 

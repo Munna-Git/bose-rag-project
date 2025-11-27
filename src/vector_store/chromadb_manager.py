@@ -3,8 +3,8 @@ ChromaDB manager with metadata support
 """
 from typing import List, Dict
 import chromadb
-from langchain.schema import Document
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_core.documents import Document
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from config.settings import config
 from src.error_handling.logger import logger
 
@@ -23,14 +23,18 @@ class EnhancedChromaDB:
                 model_name=config.EMBEDDING_MODEL
             )
             
-            # Initialize ChromaDB
-            self.client = chromadb.Client()
+            # Initialize ChromaDB with persistence
+            self.client = chromadb.PersistentClient(path=str(config.VECTOR_DB_DIR))
             self.collection = self.client.get_or_create_collection(
                 name="bose_documents",
                 metadata={"hnsw:space": "cosine"}
             )
             
-            logger.info("✅ ChromaDB initialized")
+            # Track document count
+            self.doc_count = self.collection.count()
+            logger.info(f"Existing documents in collection: {self.doc_count}")
+            
+            logger.info("SUCCESS: ChromaDB initialized")
         
         except Exception as e:
             logger.error(f"ChromaDB initialization failed: {str(e)}")
@@ -42,34 +46,68 @@ class EnhancedChromaDB:
         try:
             logger.info(f"Adding {len(documents)} documents...")
             
+            # Prepare batch data
+            ids = []
+            embeddings = []
+            docs_content = []
+            metadatas = []
+            
             for i, doc in enumerate(documents):
+                # Generate unique ID using current count + index
+                doc_id = f"doc_{self.doc_count + i}"
+                ids.append(doc_id)
+                
                 # Generate embedding
                 embedding = self.embeddings.embed_query(doc.page_content)
+                embeddings.append(embedding)
                 
-                # Add to collection
-                self.collection.add(
-                    ids=[f"doc_{i}"],
-                    embeddings=[embedding],
-                    documents=[doc.page_content],
-                    metadatas=[doc.metadata]
-                )
+                docs_content.append(doc.page_content)
+                metadatas.append(doc.metadata)
+                
+                if (i + 1) % 10 == 0:
+                    logger.info(f"Processed {i + 1}/{len(documents)} documents...")
             
-            logger.info(f"✅ {len(documents)} documents added")
+            # Add all documents in batch
+            self.collection.add(
+                ids=ids,
+                embeddings=embeddings,
+                documents=docs_content,
+                metadatas=metadatas
+            )
+            
+            # Update document count
+            self.doc_count += len(documents)
+            new_total = self.collection.count()
+            logger.info(f"SUCCESS: {len(documents)} documents added. Total in DB: {new_total}")
         
         except Exception as e:
             logger.error(f"Failed to add documents: {str(e)}")
             raise
     
-    def search(self, query: str, k: int = 5) -> List[Dict]:
+    def search(self, query: str, k: int = 5) -> Dict:
         """Search documents"""
         
         try:
+            total_docs = self.collection.count()
+            logger.info(f"Searching in {total_docs} documents for: '{query[:50]}...'")
+            
+            if total_docs == 0:
+                logger.warning("Collection is empty! No documents to search.")
+                return {'documents': [[]], 'metadatas': [[]], 'distances': [[]]}
+            
             query_embedding = self.embeddings.embed_query(query)
             
             results = self.collection.query(
                 query_embeddings=[query_embedding],
-                n_results=k
+                n_results=min(k, total_docs)
             )
+            
+            # Log search results
+            num_results = len(results['documents'][0]) if results.get('documents') else 0
+            logger.info(f"Found {num_results} matching documents")
+            
+            if num_results > 0:
+                logger.debug(f"Top result distance: {results['distances'][0][0]:.4f}")
             
             return results
         
@@ -84,7 +122,7 @@ class EnhancedChromaDB:
             self.collection = self.client.get_collection(
                 name="bose_documents"
             )
-            logger.info("✅ Loaded existing collection")
+            logger.info("SUCCESS: Loaded existing collection")
         
         except Exception as e:
             logger.warning(f"No existing collection: {str(e)}")

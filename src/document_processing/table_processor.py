@@ -3,7 +3,7 @@ Table processor - structured extraction
 """
 from typing import List
 import camelot
-from langchain.schema import Document
+from langchain_core.documents import Document
 from .base_processor import BaseProcessor
 from src.error_handling.logger import logger
 

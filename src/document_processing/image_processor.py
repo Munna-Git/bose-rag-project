@@ -4,7 +4,7 @@ Image processor - OCR
 from typing import List
 import pytesseract
 from pdf2image import convert_from_path
-from langchain.schema import Document
+from langchain_core.documents import Document
 from .base_processor import BaseProcessor
 from src.error_handling.logger import logger
 
