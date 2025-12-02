@@ -68,12 +68,16 @@ class Phi2Handler:
                     f"Pull it with: ollama pull {self.model_name}"
                 )
             
-            # Initialize LLM
+            # Initialize LLM with optimized parameters
             self.model = Ollama(
                 base_url=self.base_url,
                 model=self.model_name,
                 temperature=self.temperature,
-                num_ctx=2048
+                num_ctx=2048,
+                num_predict=self.max_tokens,
+                top_p=0.9,
+                top_k=40,
+                repeat_penalty=1.1
             )
             
             logger.info(f"SUCCESS: {self.model_name} initialized successfully")
@@ -131,7 +135,7 @@ class Phi2Handler:
     
     def generate(self, prompt: str, retries: int = 0) -> str:
         """
-        Generate response using Phi-2
+        Generate response using Phi-2 via direct Ollama API
         
         Args:
             prompt: Input prompt
@@ -150,14 +154,38 @@ class Phi2Handler:
             logger.debug(f"Generating response (attempt {retries + 1})...")
             
             start_time = time.time()
-            response = self.model.predict(
-                prompt,
-                num_predict=self.max_tokens
+            
+            # Call Ollama API directly for better parameter control
+            payload = {
+                "model": self.model_name,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": self.temperature,
+                    "num_predict": self.max_tokens,
+                    "top_p": 0.9,
+                    "top_k": 40,
+                    "repeat_penalty": 1.1,
+                    "stop": ["\n\n", "User:", "Question:", "QUESTION:", "\nQ:"]
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/generate",
+                json=payload,
+                timeout=self.timeout
             )
+            response.raise_for_status()
+            
+            result = response.json()
+            answer = result.get("response", "").strip()
+            
             elapsed = time.time() - start_time
             
             logger.info(f"Response generated in {elapsed:.2f}s")
-            return response.strip()
+            logger.debug(f"Tokens generated: {result.get('eval_count', 'unknown')}")
+            
+            return answer
         
         except requests.Timeout:
             logger.warning(f"Timeout on attempt {retries + 1}, retrying...")

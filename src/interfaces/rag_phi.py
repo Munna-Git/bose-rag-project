@@ -174,7 +174,10 @@ class BoseRAGPhi:
                 logger.info(f"Step 1: Retrieving documents...")
             
             # Retrieve documents
+            retrieval_start = time.time()
             docs = self.retriever.retrieve(query, k=5)
+            retrieval_time = time.time() - retrieval_start
+            logger.info(f"Retrieval completed in {retrieval_time:.2f}s")
             
             if not docs:
                 logger.warning(f"WARNING: No relevant documents found for query: {query}")
@@ -191,17 +194,23 @@ class BoseRAGPhi:
                 }
             
             if verbose:
-                logger.info(f"SUCCESS: Retrieved {len(docs)} relevant documents")
+                logger.info(f"SUCCESS: Retrieved {len(docs)} relevant documents in {retrieval_time:.2f}s")
                 logger.info(f"Step 2: Building prompt...")
             
             # Build prompt
+            prompt_start = time.time()
             prompt = self.prompt_builder.build_prompt(query, docs)
+            prompt_time = time.time() - prompt_start
+            logger.info(f"Prompt built in {prompt_time:.2f}s")
             
             if verbose:
                 logger.info(f"Step 3: Generating answer with Phi-2...")
             
             # Generate answer
+            generation_start = time.time()
             answer = self.llm.generate(prompt)
+            generation_time = time.time() - generation_start
+            logger.info(f"LLM generation completed in {generation_time:.2f}s")
             
             if verbose:
                 logger.info(f"SUCCESS: Answer generated")

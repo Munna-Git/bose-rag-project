@@ -96,6 +96,7 @@ class EnhancedChromaDB:
         """Search documents"""
         
         try:
+            import time
             total_docs = self.collection.count()
             logger.info(f"Searching in {total_docs} documents for: '{query[:50]}...'")
             
@@ -103,12 +104,18 @@ class EnhancedChromaDB:
                 logger.warning("Collection is empty! No documents to search.")
                 return {'documents': [[]], 'metadatas': [[]], 'distances': [[]]}
             
+            embedding_start = time.time()
             query_embedding = self.embeddings.embed_query(query)
+            embedding_time = time.time() - embedding_start
+            logger.info(f"Query embedding generated in {embedding_time:.2f}s")
             
+            search_start = time.time()
             results = self.collection.query(
                 query_embeddings=[query_embedding],
                 n_results=min(k, total_docs)
             )
+            search_time = time.time() - search_start
+            logger.info(f"ChromaDB search completed in {search_time:.2f}s")
             
             # Log search results
             num_results = len(results['documents'][0]) if results.get('documents') else 0

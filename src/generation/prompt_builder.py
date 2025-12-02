@@ -29,16 +29,18 @@ class PromptBuilder:
             )
             logger.debug(f"Building prompt with content types: {content_types}")
             
-            # Build context
+            # Build context - LIMIT TO TOP 3 DOCS AND TRUNCATE LONG CONTENT
             context_parts = []
-            for i, doc in enumerate(retrieved_docs, 1):
+            for i, doc in enumerate(retrieved_docs[:3], 1):  # Only use top 3 docs
                 content_type = doc.metadata.get('content_type', 'TEXT')
                 source = doc.metadata.get('source', 'Unknown')
                 page = doc.metadata.get('page', '?')
                 
+                # Truncate long content to 300 chars per doc (keeps total context manageable)
+                content = doc.page_content[:300] if len(doc.page_content) > 300 else doc.page_content
+                
                 context_parts.append(
-                    f"[Source {i}] {source} (Page {page}, Type: {content_type})\n"
-                    f"{doc.page_content}"
+                    f"[Source {i}] {source} (Page {page})\n{content}"
                 )
             
             context = "\n\n---\n\n".join(context_parts)
@@ -81,19 +83,12 @@ class PromptBuilder:
         """Prompt for specification queries"""
         return f"""You are a technical specification expert for Bose Professional Audio.
 
-Use ONLY the provided documentation to answer the question.
-
 DOCUMENTATION:
 {context}
 
 QUESTION: {query}
 
-INSTRUCTIONS:
-1. Answer using ONLY the documentation above
-2. Be specific and technical
-3. Include units (dB, Hz, Ohm) when applicable
-4. If not found, say "Not mentioned in the provided documents"
-5. Be concise
+INSTRUCTIONS: Answer in 1-2 sentences maximum. Be direct and technical. Include units. Use ONLY the documentation.
 
 ANSWER:"""
     
@@ -101,19 +96,12 @@ ANSWER:"""
         """Prompt for procedure queries"""
         return f"""You are a technical support specialist for Bose Professional Audio.
 
-Use ONLY the provided documentation for step-by-step instructions.
-
 DOCUMENTATION:
 {context}
 
 QUESTION: {query}
 
-INSTRUCTIONS:
-1. Use numbered steps (1, 2, 3, etc.)
-2. Use ONLY the documentation
-3. Be clear and practical
-4. If not documented, say "Instructions not found in documentation"
-5. Keep it brief
+INSTRUCTIONS: Provide numbered steps. Maximum 5 steps. Be brief and clear.
 
 ANSWER:"""
     
@@ -121,18 +109,12 @@ ANSWER:"""
         """Prompt for general queries"""
         return f"""You are an expert about Bose Professional Audio products.
 
-Answer using ONLY the provided documentation.
-
 DOCUMENTATION:
 {context}
 
 QUESTION: {query}
 
-INSTRUCTIONS:
-1. Use only the documentation above
-2. Be accurate and helpful
-3. Say if information is not available
-4. Keep response brief
+INSTRUCTIONS: Answer in 2-3 sentences maximum. Be direct and accurate. Use only the documentation.
 
 ANSWER:"""
     
