@@ -18,10 +18,18 @@ class EnhancedChromaDB:
         try:
             logger.info("Initializing ChromaDB...")
             
-            # Initialize embeddings
+            # Initialize embeddings with caching and optimization
+            model_kwargs = {'device': 'cpu'}
+            encode_kwargs = {'normalize_embeddings': True, 'batch_size': 32}
+            
             self.embeddings = HuggingFaceEmbeddings(
-                model_name=config.EMBEDDING_MODEL
+                model_name=config.EMBEDDING_MODEL,
+                model_kwargs=model_kwargs,
+                encode_kwargs=encode_kwargs,
+                cache_folder=str(config.BASE_DIR / "models")
             )
+            
+            logger.info("Embedding model loaded and cached")
             
             # Initialize ChromaDB with persistence
             self.client = chromadb.PersistentClient(path=str(config.VECTOR_DB_DIR))

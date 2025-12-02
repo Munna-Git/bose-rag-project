@@ -49,8 +49,7 @@ def main():
             # Test queries
             test_queries = [
                 "What is the maximum number of analog inputs on the EX-1280C?",
-                "What is the maximum power consumption of the processor?",
-                "What is the length of the AEC tail in milliseconds?"
+                "What is the maximum power consumption of the processor?"
             ]
             
             logger.info("\nTesting queries...")
