@@ -166,7 +166,8 @@ class Phi2Handler:
                     "top_p": 0.9,
                     "top_k": 40,
                     "repeat_penalty": 1.1,
-                    "stop": ["\n\n", "User:", "Question:", "QUESTION:", "\nQ:"]
+                    "num_ctx": 1024,  # Reduce context window for speed
+                    "stop": ["\n\n", "User:", "Question:", "QUESTION:", "\nQ:", "DOCUMENTATION:", "INSTRUCTIONS:"]
                 }
             }
             
@@ -182,8 +183,15 @@ class Phi2Handler:
             
             elapsed = time.time() - start_time
             
+            # Log performance metrics
+            eval_count = result.get('eval_count', 'unknown')
+            prompt_eval_count = result.get('prompt_eval_count', 'unknown')
+            
             logger.info(f"Response generated in {elapsed:.2f}s")
-            logger.debug(f"Tokens generated: {result.get('eval_count', 'unknown')}")
+            logger.info(f"Tokens - Prompt: {prompt_eval_count}, Generated: {eval_count}")
+            
+            if eval_count != 'unknown' and eval_count > self.max_tokens:
+                logger.warning(f"Model generated {eval_count} tokens, exceeded limit of {self.max_tokens}!")
             
             return answer
         

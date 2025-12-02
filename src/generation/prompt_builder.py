@@ -29,15 +29,15 @@ class PromptBuilder:
             )
             logger.debug(f"Building prompt with content types: {content_types}")
             
-            # Build context - LIMIT TO TOP 3 DOCS AND TRUNCATE LONG CONTENT
+            # Build context - LIMIT TO TOP 2 DOCS AND TRUNCATE AGGRESSIVELY
             context_parts = []
-            for i, doc in enumerate(retrieved_docs[:3], 1):  # Only use top 3 docs
+            for i, doc in enumerate(retrieved_docs[:2], 1):  # Only use top 2 docs
                 content_type = doc.metadata.get('content_type', 'TEXT')
                 source = doc.metadata.get('source', 'Unknown')
                 page = doc.metadata.get('page', '?')
                 
-                # Truncate long content to 300 chars per doc (keeps total context manageable)
-                content = doc.page_content[:300] if len(doc.page_content) > 300 else doc.page_content
+                # Truncate to 200 chars per doc for speed
+                content = doc.page_content[:200] if len(doc.page_content) > 200 else doc.page_content
                 
                 context_parts.append(
                     f"[Source {i}] {source} (Page {page})\n{content}"
