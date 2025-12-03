@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metrics Dashboard - Bose RAG System</title>
+    <style>
+        :root {
+            --bose-red: #CE1126;
+            --bose-black: #000000;
+            --bose-gray: #333333;
+            --bose-light-gray: #F5F5F5;
+            --success-green: #10B981;
+            --warning-yellow: #F59E0B;
+            --info-blue: #3B82F6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bose-light-gray);
+            color: var(--bose-gray);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--bose-black) 0%, var(--bose-gray) 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #ddd;
+            font-size: 0.9em;
+        }
+
+        .nav {
+            margin-top: 15px;
+        }
+
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            background-color: var(--bose-red);
+            border-radius: 5px;
+            margin-right: 10px;
+            font-size: 0.9em;
+            display: inline-block;
+        }
+
+        .nav a:hover {
+            background-color: #a00e1e;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--bose-black);
+        }
+
+        .metric-unit {
+            font-size: 0.5em;
+            color: #999;
+            margin-left: 5px;
+        }
+
+        .metric-subtext {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-enabled {
+            background-color: var(--success-green);
+            color: white;
+        }
+
+        .status-disabled {
+            background-color: #ccc;
+            color: #666;
+        }
+
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: var(--bose-black);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--bose-red);
+        }
+
+        .enhancement-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: var(--bose-light-gray);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .enhancement-name {
+            font-weight: 600;
+            color: var(--bose-black);
+        }
+
+        .enhancement-desc {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .query-list {
+            list-style: none;
+        }
+
+        .query-item {
+            padding: 15px;
+            background-color: var(--bose-light-gray);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--info-blue);
+        }
+
+        .query-text {
+            font-weight: 500;
+            color: var(--bose-black);
+            margin-bottom: 8px;
+        }
+
+        .query-meta {
+            font-size: 0.85em;
+            color: #666;
+            display: flex;
+            gap: 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .error {
+            background-color: #fee;
+            color: #c00;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #c00;
+        }
+
+        .refresh-btn {
+            background-color: var(--bose-red);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn:hover {
+            background-color: #a00e1e;
+        }
+
+        .chart-placeholder {
+            height: 200px;
+            background: linear-gradient(to right, #f0f0f0 0%, #e0e0e0 50%, #f0f0f0 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Metrics Dashboard</h1>
+            <p class="subtitle">Performance Monitoring & Analytics</p>
+            <div class="nav">
+                <a href="/">← Back to Query Interface</a>
+                <a href="#" onclick="refreshMetrics()">🔄 Refresh</a>
+            </div>
+        </header>
+
+        <button class="refresh-btn" onclick="refreshMetrics()">🔄 Refresh Metrics</button>
+
+        <!-- Key Metrics -->
+        <div class="dashboard-grid" id="metricsGrid">
+            <div class="loading">Loading metrics...</div>
+        </div>
+
+        <!-- Enhancements Status -->
+        <div class="section" id="enhancementsSection">
+            <h2 class="section-title">Phase 1 Enhancements</h2>
+            <div id="enhancementsList">
+                <div class="loading">Loading enhancements...</div>
+            </div>
+        </div>
+
+        <!-- Recent Queries -->
+        <div class="section" id="recentQueriesSection">
+            <h2 class="section-title">Recent Queries</h2>
+            <ul class="query-list" id="recentQueriesList">
+                <li class="loading">Loading recent queries...</li>
+            </ul>
+        </div>
+
+        <!-- Cache Statistics -->
+        <div class="section" id="cacheSection" style="display: none;">
+            <h2 class="section-title">Cache Performance</h2>
+            <div id="cacheStats"></div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchMetrics() {
+            try {
+                const response = await fetch('/api/metrics');
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to fetch metrics:', error);
+                return null;
+            }
+        }
+
+        async function fetchEnhancements() {
+            try {
+                const response = await fetch('/api/enhancements');
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to fetch enhancements:', error);
+                return null;
+            }
+        }
+
+        async function fetchCacheStats() {
+            try {
+                const response = await fetch('/api/cache/stats');
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to fetch cache stats:', error);
+                return null;
+            }
+        }
+
+        function renderMetrics(data) {
+            const grid = document.getElementById('metricsGrid');
+            
+            if (!data || !data.enabled) {
+                grid.innerHTML = '<div class="error">Metrics collection is disabled. Enable ENABLE_METRICS in settings.</div>';
+                return;
+            }
+
+            const summary = data.summary;
+            const overview = summary.overview || {};
+            const cache = summary.cache || {};
+            const latency = summary.latency || {};
+
+            grid.innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-label">Total Queries</div>
+                    <div class="metric-value">${overview.total_queries || 0}</div>
+                    <div class="metric-subtext">Success Rate: ${overview.success_rate || 0}%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Average Latency</div>
+                    <div class="metric-value">${latency.average || 0}<span class="metric-unit">s</span></div>
+                    <div class="metric-subtext">Median: ${latency.median || 0}s | Max: ${latency.max || 0}s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Cache Hit Rate</div>
+                    <div class="metric-value">${cache.hit_rate || 0}<span class="metric-unit">%</span></div>
+                    <div class="metric-subtext">Hits: ${cache.hits || 0} | Misses: ${cache.misses || 0}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">System Uptime</div>
+                    <div class="metric-value">${Math.floor((overview.uptime_seconds || 0) / 60)}<span class="metric-unit">min</span></div>
+                    <div class="metric-subtext">Failed: ${overview.failed || 0} queries</div>
+                </div>
+            `;
+
+            // Render recent queries
+            if (data.recent_queries && data.recent_queries.length > 0) {
+                renderRecentQueries(data.recent_queries);
+            }
+        }
+
+        function renderEnhancements(data) {
+            const list = document.getElementById('enhancementsList');
+            
+            if (!data) {
+                list.innerHTML = '<div class="error">Failed to load enhancements status</div>';
+                return;
+            }
+
+            const enhancements = [
+                {
+                    name: 'Hybrid Search',
+                    key: 'hybrid_search',
+                    desc: 'Combines vector search (semantic) with BM25 (keyword matching)'
+                },
+                {
+                    name: 'Query Caching',
+                    key: 'query_cache',
+                    desc: 'LRU cache for repeated queries (99%+ speedup)'
+                },
+                {
+                    name: 'Confidence Scoring',
+                    key: 'confidence_scoring',
+                    desc: 'Reliability indicators for answers based on retrieval quality'
+                },
+                {
+                    name: 'Metrics Dashboard',
+                    key: 'metrics',
+                    desc: 'Performance tracking and monitoring (this page)'
+                }
+            ];
+
+            list.innerHTML = enhancements.map(enh => `
+                <div class="enhancement-item">
+                    <div>
+                        <div class="enhancement-name">${enh.name}</div>
+                        <div class="enhancement-desc">${enh.desc}</div>
+                    </div>
+                    <span class="status-badge ${data[enh.key] ? 'status-enabled' : 'status-disabled'}">
+                        ${data[enh.key] ? '✓ Enabled' : '○ Disabled'}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function renderRecentQueries(queries) {
+            const list = document.getElementById('recentQueriesList');
+            
+            if (!queries || queries.length === 0) {
+                list.innerHTML = '<li class="query-item">No queries yet</li>';
+                return;
+            }
+
+            list.innerHTML = queries.map(q => `
+                <li class="query-item">
+                    <div class="query-text">${q.query || 'Unknown query'}</div>
+                    <div class="query-meta">
+                        <span>⏱ ${q.latency || 'N/A'}s</span>
+                        <span>${q.success ? '✓ Success' : '✗ Failed'}</span>
+                        ${q.cache_hit ? '<span>🔥 Cache Hit</span>' : ''}
+                        ${q.confidence ? `<span>📊 Confidence: ${(q.confidence * 100).toFixed(0)}%</span>` : ''}
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        async function renderCacheStats(data) {
+            const section = document.getElementById('cacheSection');
+            const stats = document.getElementById('cacheStats');
+            
+            if (!data || !data.enabled) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            stats.innerHTML = `
+                <div class="dashboard-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Cache Size</div>
+                        <div class="metric-value">${data.size}/${data.max_size}</div>
+                        <div class="metric-subtext">Evictions: ${data.evictions || 0}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Hit Rate</div>
+                        <div class="metric-value">${data.hit_rate}%</div>
+                        <div class="metric-subtext">Hits: ${data.hits} | Misses: ${data.misses}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">TTL Expirations</div>
+                        <div class="metric-value">${data.ttl_expirations || 0}</div>
+                        <div class="metric-subtext">Aged out entries</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function refreshMetrics() {
+            console.log('Refreshing metrics...');
+            
+            const [metrics, enhancements, cache] = await Promise.all([
+                fetchMetrics(),
+                fetchEnhancements(),
+                fetchCacheStats()
+            ]);
+
+            renderMetrics(metrics);
+            renderEnhancements(enhancements);
+            await renderCacheStats(cache);
+        }
+
+        // Initial load
+        refreshMetrics();
+
+        // Auto-refresh every 30 seconds
+        setInterval(refreshMetrics, 30000);
+    </script>
+</body>
+</html>

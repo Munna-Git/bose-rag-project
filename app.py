@@ -47,6 +47,8 @@ class QueryResponse(BaseModel):
     model: str
     time: str
     error: Optional[str] = None
+    confidence: Optional[Dict] = None
+    confidence_recommendation: Optional[str] = None
 
 
 class SystemInfo(BaseModel):
@@ -146,6 +148,91 @@ async def system_info():
     except Exception as e:
         logger.error(f"Failed to get system info: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/metrics")
+async def get_metrics():
+    """Get performance metrics (if enabled)"""
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG system not initialized")
+    
+    try:
+        return rag.get_metrics()
+    except Exception as e:
+        logger.error(f"Failed to get metrics: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/cache/stats")
+async def get_cache_stats():
+    """Get cache statistics (if enabled)"""
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG system not initialized")
+    
+    try:
+        return rag.get_cache_stats()
+    except Exception as e:
+        logger.error(f"Failed to get cache stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/cache/clear")
+async def clear_cache():
+    """Clear query cache"""
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG system not initialized")
+    
+    try:
+        rag.clear_cache()
+        return {"status": "success", "message": "Cache cleared"}
+    except Exception as e:
+        logger.error(f"Failed to clear cache: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/enhancements")
+async def get_enhancements():
+    """Get status of enhancement features"""
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG system not initialized")
+    
+    info = rag.get_system_info()
+    return info.get('enhancements', {})
+
+
+@app.get("/api/test-confidence")
+async def test_confidence():
+    """Test endpoint to verify confidence scoring works"""
+    if not rag:
+        raise HTTPException(status_code=503, detail="RAG system not initialized")
+    
+    from langchain_core.documents import Document
+    from config.settings import config
+    
+    # Create test documents
+    test_docs = [
+        Document(page_content="Test content about frequency response", metadata={'page': 1}),
+        Document(page_content="More test content", metadata={'page': 2})
+    ]
+    
+    # Test confidence calculation
+    if config.ENABLE_CONFIDENCE_SCORING:
+        confidence = rag.confidence_scorer.calculate_confidence(
+            query="test query",
+            answer="This is a test answer with specific technical details about frequency response.",
+            retrieved_docs=test_docs,
+            retrieval_scores=[0.9, 0.85]
+        )
+        return {
+            "confidence_scoring_enabled": True,
+            "test_confidence": confidence,
+            "message": "Confidence scoring is working!"
+        }
+    else:
+        return {
+            "confidence_scoring_enabled": False,
+            "message": "Confidence scoring is disabled in settings"
+        }
 
 
 @app.post("/api/process-documents")

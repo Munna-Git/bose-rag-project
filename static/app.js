@@ -120,14 +120,17 @@ async function handleSubmit(e) {
         
         const data = await response.json();
         
+        // Debug: log response data
+        console.log('Query response:', data);
+        
         // Remove loading indicator
         removeLoadingMessage(loadingId);
         
         // Add assistant response
         if (data.status === 'success') {
-            addMessage('assistant', data.answer, data.sources, data.time);
+            addMessage('assistant', data.answer, data.sources, data.time, data.confidence, data.cache_hit);
         } else if (data.status === 'no_context') {
-            addMessage('assistant', data.answer, [], data.time);
+            addMessage('assistant', data.answer, [], data.time, null, data.cache_hit);
         } else {
             throw new Error(data.error || 'Unknown error');
         }
@@ -145,7 +148,7 @@ async function handleSubmit(e) {
     }
 }
 
-function addMessage(type, content, sources = [], time = '') {
+function addMessage(type, content, sources = [], time = '', confidence = null, cacheHit = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message message-${type}`;
     
@@ -157,6 +160,27 @@ function addMessage(type, content, sources = [], time = '') {
     } else {
         // Assistant message with formatted content
         contentDiv.innerHTML = formatContent(content);
+        
+        // Add confidence indicator if available
+        console.log('Checking confidence data:', confidence);
+        
+        if (confidence && confidence.overall !== undefined) {
+            console.log('✓ Adding confidence indicator:', confidence);
+            const confidenceDiv = document.createElement('div');
+            confidenceDiv.className = 'confidence-indicator';
+            confidenceDiv.innerHTML = `
+                <div class="confidence-bar confidence-${confidence.label}">
+                    <span class="confidence-label">Confidence: ${(confidence.overall * 100).toFixed(0)}%</span>
+                    <span class="confidence-badge">${confidence.label.toUpperCase()}</span>
+                </div>
+                ${confidence.explanation ? `<div class="confidence-explanation">${confidence.explanation}</div>` : ''}
+            `;
+            contentDiv.appendChild(confidenceDiv);
+        } else if (confidence !== null && confidence !== undefined) {
+            console.warn('✗ Confidence data present but invalid format:', confidence);
+        } else {
+            console.log('ℹ No confidence data in response');
+        }
         
         // Add sources if available
         if (sources && sources.length > 0) {
@@ -177,12 +201,16 @@ function addMessage(type, content, sources = [], time = '') {
     
     messageDiv.appendChild(contentDiv);
     
-    // Add timestamp
+    // Add metadata (timestamp and cache indicator)
     if (time) {
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'message-time';
-        timeDiv.textContent = `Answered in ${time}`;
-        messageDiv.appendChild(timeDiv);
+        const metaDiv = document.createElement('div');
+        metaDiv.className = 'message-time';
+        let metaText = `Answered in ${time}`;
+        if (cacheHit) {
+            metaText += ' 🔥 (from cache)';
+        }
+        metaDiv.textContent = metaText;
+        messageDiv.appendChild(metaDiv);
     }
     
     // Remove welcome message if present

@@ -42,5 +42,22 @@ class Config:
     # Logging
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE = BASE_DIR / "rag_system.log"
+    
+    # Enhancement Features (Phase 1 - Optional, backward compatible)
+    # Hybrid Search: Combines vector search (semantic) with BM25 (keyword)
+    ENABLE_HYBRID_SEARCH = os.getenv("ENABLE_HYBRID_SEARCH", "false").lower() == "true"
+    HYBRID_SEARCH_ALPHA = float(os.getenv("HYBRID_SEARCH_ALPHA", "0.5"))  # 0.5 = equal weight
+    
+    # Query Caching: Cache results for repeated queries
+    ENABLE_QUERY_CACHE = os.getenv("ENABLE_QUERY_CACHE", "false").lower() == "true"
+    CACHE_MAX_SIZE = int(os.getenv("CACHE_MAX_SIZE", "100"))
+    CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "3600"))  # 1 hour
+    
+    # Confidence Scoring: Reliability indicators for answers
+    ENABLE_CONFIDENCE_SCORING = os.getenv("ENABLE_CONFIDENCE_SCORING", "false").lower() == "true"
+    
+    # Metrics Dashboard: Performance tracking and monitoring
+    ENABLE_METRICS = os.getenv("ENABLE_METRICS", "false").lower() == "true"
+    METRICS_WINDOW_SIZE = int(os.getenv("METRICS_WINDOW_SIZE", "100"))
 
 config = Config()

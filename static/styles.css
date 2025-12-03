@@ -277,6 +277,56 @@ body {
     padding: 0 10px;
 }
 
+/* Confidence Indicator */
+.confidence-indicator {
+    margin: 15px 0;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+}
+
+.confidence-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.confidence-high {
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.5);
+    color: #10B981;
+}
+
+.confidence-medium {
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    color: #F59E0B;
+}
+
+.confidence-low, .confidence-very_low {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    color: #EF4444;
+}
+
+.confidence-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.confidence-explanation {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--bose-text-secondary);
+    font-style: italic;
+}
+
 .message-sources {
     margin-top: 15px;
     padding-top: 15px;

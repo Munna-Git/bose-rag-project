@@ -67,7 +67,15 @@ class PromptBuilder:
         keywords = [
             "specification", "spec", "what is the", "value",
             "rating", "db", "hz", "ohm", "maximum", "minimum",
-            "frequency", "response", "snr", "spl"
+            "frequency", "response", "snr", "spl",
+            # Loudspeaker specs (DM6PE, DM8SE)
+            "watt", "power", "impedance", "sensitivity", "driver",
+            "coaxial", "two-way", "tweeter", "woofer", "pendant",
+            "ceiling", "mounting", "coverage", "dispersion",
+            # DSP/Processor specs (EX-1280)
+            "channels", "input", "output", "i/o", "latency",
+            "sample rate", "bit", "conversion", "processing",
+            "dsp", "processor", "digital signal"
         ]
         return any(kw in query.lower() for kw in keywords)
     
@@ -75,7 +83,14 @@ class PromptBuilder:
         """Detect procedure queries"""
         keywords = [
             "how", "configure", "setup", "install", "connect",
-            "steps", "procedure", "guide", "set up", "connection"
+            "steps", "procedure", "guide", "set up", "connection",
+            # Loudspeaker installation (DM6PE, DM8SE)
+            "mount", "mounting", "wire", "wiring", "placement",
+            "position", "angle", "height", "suspend", "attach",
+            # DSP configuration (EX-1280)
+            "program", "programming", "route", "routing", "assign",
+            "configure", "configuration", "network", "ethernet",
+            "firmware", "update", "reset", "initialize"
         ]
         return any(kw in query.lower() for kw in keywords)
     
@@ -88,7 +103,7 @@ DOCUMENTATION:
 
 QUESTION: {query}
 
-INSTRUCTIONS: Answer in 1-2 sentences maximum. Be direct and technical. Include units. Use ONLY the documentation.
+INSTRUCTIONS: Answer in 1-2 sentences maximum. Be direct and technical. Include units. Use ONLY the documentation above. If the documentation does not contain this information, respond with: "I cannot find this specification in the available documentation."
 
 ANSWER:"""
     
@@ -101,7 +116,7 @@ DOCUMENTATION:
 
 QUESTION: {query}
 
-INSTRUCTIONS: Provide numbered steps. Maximum 5 steps. Be brief and clear.
+INSTRUCTIONS: Provide numbered steps using ONLY the documentation above. Maximum 5 steps. Be brief and clear. If the documentation does not contain this procedure, respond with: "I cannot find this procedure in the available documentation."
 
 ANSWER:"""
     
@@ -114,7 +129,11 @@ DOCUMENTATION:
 
 QUESTION: {query}
 
-INSTRUCTIONS: Answer in 2-3 sentences maximum. Be direct and accurate. Use only the documentation.
+INSTRUCTIONS: 
+1. Answer ONLY questions about Bose audio equipment using the documentation above
+2. If the question is not about Bose audio products, respond: "I can only assist with Bose Professional Audio equipment."
+3. Answer in 2-3 sentences maximum. Be direct and accurate.
+4. If the documentation does not contain enough information, respond: "I cannot find sufficient information about this in the available documentation."
 
 ANSWER:"""
     
